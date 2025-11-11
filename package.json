@@ -1,0 +1,22 @@
+{
+  "name": "mimo",
+  "version": "0.1.0",
+  "description": "Multi-in, multi-out, MIMO. Simple, elegant, easy. AsyncGenerators could not be easier!",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["mimo", "async", "generator", "asyncgenerator", "multi-input", "multi-output"],
+  "author": "",
+  "license": "ISC",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3"
+  }
+}
