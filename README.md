@@ -4,13 +4,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**Multi-in, multi-out, MIMO. Simple, elegant, easy. AsyncGenerators could not be easier!**
+**Multi-in, multi-out, MIMO. Simple. Elegant. Easy. AsyncGenerators made easy!**
 
 `AsyncMux` is a powerful TypeScript/JavaScript library that provides a **M:N async generator multiplexer**. It allows you to easily combine multiple async generators into multiple outputs, creating a flexible broadcasting system for async data streams.
 
 ## ✨ Features
 
-- 🚀 **M:N Multiplexing**: Multiple inputs to multiple outputs
+- 🚀 **M:N Multiplexing**: Multiple inputs to multiple outputs, thus the name "MIMO"
 - 🔄 **Async Generator Support**: Works seamlessly with async generators
 - 📡 **Broadcast Pattern**: All inputs are replicated to all outputs
 - 🛡️ **Type Safe**: Full TypeScript support with generics
@@ -29,7 +29,7 @@ npm install mimo
 ```typescript
 import { AsyncMux } from 'mimo';
 
-// Create a multiplexer
+// Create an AsyncMux
 const mux = new AsyncMux<number>();
 
 // Add some async generators as inputs
@@ -114,9 +114,7 @@ Adds an async generator as an input source.
 
 **Example:**
 ```typescript
-const cleanup = mux.in(myAsyncGenerator);
-// Later, remove the input
-cleanup();
+mux.in(myAsyncGenerator);
 ```
 
 #### `out(): { generator: AsyncGenerator<T>, stop: () => void }`
@@ -327,4 +325,3 @@ Inspired by the elegance of async generators and the need for simple multiplexin
 ---
 
 **Made with ❤️ by [yash101](https://github.com/yash101)**
-
