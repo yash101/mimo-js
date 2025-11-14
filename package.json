@@ -1,5 +1,5 @@
 {
-  "name": "mimo",
+  "name": "@yash101/mimo",
   "version": "0.1.0",
   "description": "Multi-in, multi-out, MIMO. Simple, elegant, easy. AsyncGenerators could not be easier!",
   "main": "dist/index.js",
@@ -17,7 +17,8 @@
     "generator",
     "asyncgenerator",
     "multi-input",
-    "multi-output"
+    "multi-output",
+    "yash101"
   ],
   "author": "",
   "license": "ISC",
