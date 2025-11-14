@@ -29,11 +29,17 @@
  * 
  */
 
-export class AsyncMux<T> {
-  private stopped = false;
-  // private inputs: Set<AsyncGenerator<T>> = new Set();
-  private queues: Set<{ push: (val: T) => void; pull: () => Promise<T> }> = new Set();
-  private static readonly STOP_SYMBOL: Symbol = Symbol('STOP');
+const StopSymbol: Symbol = Symbol('STOP');
+
+interface AsyncQueue<T> {
+  push: (item: T | typeof StopSymbol) => void;
+  pull: () => Promise<T | typeof StopSymbol>;
+}
+
+export default class AsyncMux<T> {
+  inputCount: number = 0;
+  stopFlag: boolean = false;
+  queues: Set<AsyncQueue<T>> = new Set();
 
   /**
    * Async generator input. Pass it an async generator to watch
@@ -41,19 +47,19 @@ export class AsyncMux<T> {
    * @param input async generator to add
    */
   in(input: AsyncGenerator<T>): void {
-    if (this.stopped)
-      throw new Error("Mux already stopped");
+    this.inputCount++;
 
+    // Data ingest: literally just iterate the input AsyncGenerator and push items!
     (async () => {
-      try {
-        for await (const item of input) {
-          if (this.stopped)
-            break;
+      for await (const item of input) {
+        if (this.stopFlag) // stoppability
+          break;
+        this.push(item);
+      }
 
-          for (const q of this.queues)
-            q.push(item);
-        }
-      } catch (err) {
+      this.inputCount--;
+      if (this.inputCount === 0) {
+        this.stop();
       }
     })();
   }
@@ -67,54 +73,58 @@ export class AsyncMux<T> {
     generator: AsyncGenerator<T>;
     stop: () => void
   } {
-    const queue: T[] = [];
-    let resolve: (() => void) | null = null;
-    let done = false;
+    const queue: (T | Symbol)[] = [];
+    let controlPromise: Promise<void> | null = null;
+    let resolve: any = null;
 
-    const push = (val: T) => {
-      if (done)
-        return;
-      queue.push(val);
+    const pushItem = (item: T | typeof StopSymbol) => {
+      queue.push(item);
       if (resolve) {
         resolve();
         resolve = null;
+        controlPromise = null;
       }
     };
 
-    const pull = async (): Promise<T> => {
-      while (queue.length === 0)
-        await new Promise<void>(r => (resolve = r));
-      return queue.shift()!;
+    const pullItem = async (): Promise<T | typeof StopSymbol> => {
+      if (queue.length > 0) {
+        return queue.shift() as T;
+      }
+
+      if (!controlPromise) {
+        controlPromise = new Promise((res) => {
+          resolve = res;
+        });
+      }
+
+      await controlPromise;
+      return queue.shift() as T;
     };
 
-    const q = {
-      push,
-      pull
+    const asyncQueue: AsyncQueue<T> = {
+      push: pushItem,
+      pull: pullItem
     };
-    this.queues.add(q);
 
-    const generator =
-      (async function* (this: AsyncMux<T>) {
-        try {
-          while (!this.stopped && !done) {
-            const item = await q.pull();
-            if (item === AsyncMux.STOP_SYMBOL)
-              break;
-            else yield item;
+    this.queues.add(asyncQueue);
+
+    const generator: AsyncGenerator<T> =
+      (async function* outputGen(this: AsyncMux<T>) {
+        while (this.inputCount > 0 || queue.length > 0) {
+          const item = await asyncQueue.pull();
+          if (item === StopSymbol) {
+            break;
           }
-        } catch {
-          // Generator closed or mux stopped
-        } finally {
-          this.queues.delete(q);
+
+          yield item as T;
         }
+
+        this.queues.delete(asyncQueue);
       })
       .call(this);
 
     const stop = () => {
-      done = true;
-      this.queues.delete(q);
-      if (resolve)
-        resolve();
+      pushItem(StopSymbol);
     };
 
     return {
@@ -128,24 +138,29 @@ export class AsyncMux<T> {
    * 
    * @param item 
    */
-  push(item: T): void {
-    if (this.stopped)
-      return;
-
-    for (const q of this.queues)
+  private pushInternal(item: T | typeof StopSymbol): void {
+    for (const q of this.queues) {
       q.push(item);
+    }
+  }
+
+  push(item: T): void {
+    this.pushInternal(item);
   }
 
   /**
    * Stop the mux and all inputs/outputs
    */
   stop(): void {
-    if (this.stopped)
-      return;
-    this.stopped = true;
-    
-    for (const q of this.queues)
-      q.push(AsyncMux.STOP_SYMBOL as any); // Unblock all
-    this.queues.clear();
+    this.stopFlag = true;
+    this.pushInternal(StopSymbol);
+  }
+
+  readerCount(): number {
+    return this.inputCount;
+  }
+
+  writerCount(): number {
+    return this.queues.size;
   }
 }

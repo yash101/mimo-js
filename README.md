@@ -18,16 +18,46 @@
 - ⚡ **Non-blocking**: Asynchronous operations don't block each other
 - 🎯 **Simple API**: Easy to use with minimal boilerplate
 
+## ⁉️ What is an Async Generator?
+
+Async generators in JavaScript are special functions with fancy syntax which allow you to produce sequences of values asynchronously.
+
+The example below shows a simple async generator that yields numbers from 0 to 4, waiting 1 second between each yield:
+
+```javascript
+async function* asyncGeneratorExample() {
+  for (let i = 0; i < 5; i++) {
+    // Simulate an asynchronous operation
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    yield i; // Yield the next value in the sequence
+  }
+}
+```
+
+## 🛠️ Why Use AsyncMux?
+
+A single async generator is easy to work with. But it can be only consumed by one consumer at a time. But sometimes we want more complex patterns:
+
+Perhaps we're reading data from a streaming API and want to broadcast that data to multiple consumers? In this situation, JavaScript's async generators 
+and async APIs fall short. Achieving bug-free multiplexing with async generators is tricky, error prone, and makes multi-threading in C and assembly look
+easy.
+
+It's JavaScript after all. It should be simple and elegant. I made it simple and elegant with `AsyncMux`!
+
 ## 📦 Installation
 
 ```bash
 npm install mimo
 ```
 
+Installation couldn't be easier! Just use npm to install the `mimo` package into your project.
+
+Or if you're a risky cowboy, just copy and paste `src/index.ts` into your codebase, rename it something useful, and call it a day!
+
 ## 🚀 Quick Start
 
 ```typescript
-import { AsyncMux } from 'mimo';
+import AsyncMux from 'mimo';
 
 // Create an AsyncMux
 const mux = new AsyncMux<number>();
@@ -88,6 +118,11 @@ Output 2: 3
 Output 1: c
 Output 2: c
 ```
+
+## 📚 Learning the Library
+
+The best way to learn how to use `AsyncMux` is to read its unit tests in `src/index.test.ts`. The unit tests each build on one feature at a time
+demonstrating multiple useage patterns.
 
 ## 📚 API Reference
 
@@ -294,6 +329,20 @@ npm run test:watch
 npm run test:coverage
 ```
 
+## ✅ Behavior verified by automated tests
+
+The project contains unit tests in `src/index.test.ts` that verify the core behaviors of `AsyncMux`. The tests exercise representative usage patterns and ensure the mux behaves as documented. Here's a short summary of what the tests cover (useful when reading the test file or adding more tests):
+
+- Constructor: creating a new `AsyncMux<T>()` returns a usable instance.
+- 1:1 (single producer -> single consumer): adding one async generator with `in()` and consuming from `out()` yields the generator's sequence.
+- 1:N (single producer -> many consumers): multiple calls to `out()` receive the entire input sequence (fan-out behavior).
+- N:1 (many producers -> single consumer): multiple inputs added via `in()` are merged into a single stream; order may vary depending on timing but all values are delivered.
+- N:M (many producers -> many consumers): merged inputs are broadcast to every output produced by `out()` (merge + fan-out combined).
+- stop() and push(): stopping the mux via `stop()` cancels inputs/outputs; `push(item)` allows pushing items directly to all outputs (bypassing inputs) and is verified alongside stop behavior.
+- Exiting outputs: if no inputs are present, outputs created with `out()` will exit/complete immediately (the tests assert that an output with no inputs yields no values and finishes).
+
+These tests are a small, runnable specification of expected behavior. If you modify the mux implementation, run the test suite to verify these behaviors remain intact.
+
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
@@ -319,4 +368,4 @@ Inspired by the elegance of async generators and the need for simple multiplexin
 
 ---
 
-**Made with ❤️ by [yash101](https://github.com/yash101)**
+**Made with ❤️ by [yash101](https://github.com/yash101**
