@@ -36,6 +36,11 @@ interface AsyncQueue<T> {
   pull: () => Promise<T | typeof StopSymbol>;
 }
 
+export interface AsyncMuxOut<T> {
+  generator: AsyncGenerator<T>;
+  stop: () => void;
+}
+
 export default class AsyncMux<T> {
   inputCount: number = 0;
   stopFlag: boolean = false;
@@ -69,10 +74,7 @@ export default class AsyncMux<T> {
    * 
    * @returns AsyncGenerator which captures all the events
    */
-  out(): {
-    generator: AsyncGenerator<T>;
-    stop: () => void
-  } {
+  out(): AsyncMuxOut<T> {
     const queue: (T | Symbol)[] = [];
     let controlPromise: Promise<void> | null = null;
     let resolve: any = null;

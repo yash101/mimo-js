@@ -1,6 +1,6 @@
 {
   "name": "@yash101/mimo",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Multi-in, multi-out, MIMO. Simple, elegant, easy. AsyncGenerators could not be easier!",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
