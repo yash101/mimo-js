@@ -28,31 +28,22 @@
  * THE SOFTWARE.
  * 
  */
+
 export class AsyncMux<T> {
   private stopped = false;
-  private stoppedResolve!: () => void;
-  private stoppedPromise: Promise<void>;
-  private inputs: Set<AsyncGenerator<T>> = new Set();
+  // private inputs: Set<AsyncGenerator<T>> = new Set();
   private queues: Set<{ push: (val: T) => void; pull: () => Promise<T> }> = new Set();
-
-  /**
-   * Constructor
-   */
-  constructor() {
-    this.stoppedPromise = new Promise<void>(resolve => (this.stoppedResolve = resolve));
-  }
+  private static readonly STOP_SYMBOL: Symbol = Symbol('STOP');
 
   /**
    * Async generator input. Pass it an async generator to watch
    * 
    * @param input async generator to add
-   * @returns 
    */
-  in(input: AsyncGenerator<T>): () => void {
+  in(input: AsyncGenerator<T>): void {
     if (this.stopped)
       throw new Error("Mux already stopped");
 
-    this.inputs.add(input);
     (async () => {
       try {
         for await (const item of input) {
@@ -63,12 +54,8 @@ export class AsyncMux<T> {
             q.push(item);
         }
       } catch (err) {
-      } finally {
-        this.inputs.delete(input);
       }
     })();
-
-    return () => this.inputs.delete(input);
   }
 
   /**
@@ -95,11 +82,8 @@ export class AsyncMux<T> {
     };
 
     const pull = async (): Promise<T> => {
-      while (queue.length === 0) {
-        if (this.stopped || done)
-          throw new Error("Stopped");
+      while (queue.length === 0)
         await new Promise<void>(r => (resolve = r));
-      }
       return queue.shift()!;
     };
 
@@ -113,7 +97,10 @@ export class AsyncMux<T> {
       (async function* (this: AsyncMux<T>) {
         try {
           while (!this.stopped && !done) {
-            yield await q.pull();
+            const item = await q.pull();
+            if (item === AsyncMux.STOP_SYMBOL)
+              break;
+            else yield item;
           }
         } catch {
           // Generator closed or mux stopped
@@ -156,10 +143,9 @@ export class AsyncMux<T> {
     if (this.stopped)
       return;
     this.stopped = true;
-    this.stoppedResolve();
     
     for (const q of this.queues)
-      q.push(null as any); // Unblock all
+      q.push(AsyncMux.STOP_SYMBOL as any); // Unblock all
     this.queues.clear();
   }
 }
