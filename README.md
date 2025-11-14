@@ -255,11 +255,9 @@ Always clean up resources when done:
 ```typescript
 const mux = new AsyncMux<number>();
 
-// Add inputs with cleanup tracking
-const cleanups = [
-  mux.in(generator1()),
-  mux.in(generator2()),
-];
+// Add inputs
+mux.in(generator1()),
+mux.in(generator2()),
 
 // Create outputs
 const outputs = [
@@ -269,7 +267,6 @@ const outputs = [
 
 // Cleanup function
 const cleanup = () => {
-  cleanups.forEach(cleanup => cleanup());
   outputs.forEach(output => output.stop());
   mux.stop();
 };
@@ -282,7 +279,7 @@ process.on('SIGINT', cleanup);
 
 - **Memory**: Queues are processed efficiently, but very high-frequency inputs may accumulate
 - **Concurrency**: Multiple inputs/outputs work simultaneously without blocking
-- **Cleanup**: Always call `stop()` to prevent memory leaks
+- **Cleanup**: Always call `stop()` to prevent resource leaks
 
 ## 🧪 Testing
 
@@ -296,8 +293,6 @@ npm run test:watch
 # Run tests with coverage
 npm run test:coverage
 ```
-
-Test coverage: **95%** with comprehensive unit tests covering all functionality.
 
 ## 📄 License
 
