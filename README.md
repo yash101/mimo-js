@@ -47,7 +47,7 @@ It's JavaScript after all. It should be simple and elegant. I made it simple and
 ## 📦 Installation
 
 ```bash
-npm install mimo
+npm install @yash101/mimo
 ```
 
 Installation couldn't be easier! Just use npm to install the `mimo` package into your project.
